@@ -139,7 +139,7 @@ class MWGlobalAuthClient
     /* Хук в MediaWiki */
     static function MediaWikiPerformAction($output, $article, $title, $user, $request, $wiki)
     {
-        global $wgUser;
+        global $wgUser, $wgRequest;
         global $egGlobalAuthClientRequire, $egGlobalAuthClientRequireGroup, $egGlobalAuthServer, $egGlobalAuthMapToHaloACL;
         if (!$egGlobalAuthServer)
             return true;
@@ -148,7 +148,7 @@ class MWGlobalAuthClient
         {
             $cache = wfGetCache(CACHE_ANYTHING);
             $cachekey = wfMemcKey('ga-ckey', $id);
-            $datakey = wfMemcKey('ga-cdata', $data);
+            $datakey = wfMemcKey('ga-cdata', $id);
             $secret = $cache->get($cachekey);
             /* сервер передаёт нам данные, их надо сохранить в кэше */
             if ($v['ga_key'] && $v['ga_key'] == $secret)
@@ -157,11 +157,7 @@ class MWGlobalAuthClient
                 if ($v['ga_nologin'])
                     $data = 'nologin';
                 elseif ($v['ga_data'])
-                {
                     $data = (array)json_decode(utf8_decode($v['ga_data']));
-                    if ($data)
-                        $data = json_encode($data);
-                }
                 if ($data)
                 {
                     $cache->set($datakey, $data, 86400);
@@ -170,10 +166,8 @@ class MWGlobalAuthClient
                 }
             }
             /* к нам пришёл пользователь, его надо авторизовать или послать */
-            elseif (!$v['ga_key'] && ($d = $cache->get($datakey)))
+            if (!$v['ga_key'] && ($d = $cache->get($datakey)))
             {
-                if ($d != 'nologin')
-                    $d = (array)json_decode(utf8_decode($d));
                 $user = self::get_user($d);
                 if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
                     self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
@@ -235,39 +229,30 @@ class MWGlobalAuthClient
             return;
         $cache = wfGetCache(CACHE_ANYTHING);
         $require = $require || $force;
+        $rg = $egGlobalAuthClientRequireGroup;
         /* в каких случаях нужно повторно запросить авторизацию? */
-        $redo_auth = $force;
-        if ($egGlobalAuthClientRequireGroup)
+        if ($wgUser->getId())
+            $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
+        else
         {
-            if ($wgUser->getId())
-            {
-                /* если пользователь вошёл, проверим внешние группы по его ID */
-                $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
-                if (!$d || !$d['user_groups'])
-                    $redo_auth = true;
-                elseif (!in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
-                    self::group_access_denied($d);
-            }
-            elseif (($id = $_COOKIE[$wgCookiePrefix.'globalauth']) &&
-                ($d = $cache->get(wfMemcKey('ga-cdata', $id))))
-            {
-                /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
-                if (!$d['user_groups'])
-                    $redo_auth = true;
-                elseif (!in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
-                    self::group_access_denied($d);
-            }
-            else
-            {
-                /* если данные авторизации не сохранены, нужно авторизоваться заново */
-                $redo_auth = true;
-            }
+            /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
+            $id = $_COOKIE[$wgCookiePrefix.'globalauth'];
+            if ($id)
+                $d = $cache->get(wfMemcKey('ga-cdata', $id));
         }
-        /* если ещё не пробовали авторизоваться, или авторизация обязательна */
-        if (!$wgUser->getId() && ($require || !$_COOKIE[$wgCookiePrefix.'redoglobalauth']))
-            $redo_auth = true;
+        /* Инициировать, если
+           - запросили перелогин ($force)
+           - пользователь не авторизован, а требуется он или внешняя группа
+           - пользователь не авторизован и вообще не пробовал авторизоваться
+           - требуется группа, а данные о группах ещё не получены
+         */
+        $redo_auth = $force || !$d || ($require || $rg) && $d == 'nologin' || $rg && !$d['user_groups'];
         if (!$redo_auth)
+        {
+            if ($rg && !in_array($rg, $d['user_groups']))
+                self::group_access_denied($d);
             return;
+        }
         /* генерируем ID и ключ */
         $id = unpack('H*', urandom(16));
         $id = $id[1];
@@ -283,8 +268,6 @@ class MWGlobalAuthClient
         $content = curl_exec($curl);
         $r = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        /* кука говорит о том, что уже пробовали авторизоваться */
-        $wgRequest->response()->setcookie('redoglobalauth', 1);
         if ($content)
         {
             $return = self::clean_uri(array('ga_client' => 1));

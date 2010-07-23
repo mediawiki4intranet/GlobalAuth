@@ -15,6 +15,7 @@ if (!defined('MEDIAWIKI')) die();
 require_once(dirname(__FILE__).'/urandom.php');
 
 $wgHooks['MediaWikiPerformAction'][] = 'MWGlobalAuthClient::MediaWikiPerformAction';
+$wgHooks['MediaWikiPreliminaryChecks'][] = 'MWGlobalAuthClient::MediaWikiPreliminaryChecks';
 
 /*  Расширение - клиент глобальной авторизации (GlobalAuth.php - сервер глобальной авторизации)
     Конфигурация: 
@@ -45,12 +46,25 @@ Relogin to <a href="$d[auth_site]">$d[auth_source]</a> with appropriate user fir
 
 class MWGlobalAuthClient
 {
+    /* Флаг, чтобы не делать повторную проверку */
+    static $checked = false;
+
     /* Спецстраницы, всегда доступные без авторизации */
     static $Whitelist = array(
         'userlogin'     => 1,
         'userlogout'    => 1,
         'confirmemail'  => 1,
     );
+
+    static function MediaWikiPreliminaryChecks($title, $output, $request)
+    {
+        return self::handle_and_check();
+    }
+
+    static function MediaWikiPerformAction($output, $article, $title, $user, $request, $wiki)
+    {
+        return self::handle_and_check();
+    }
 
     /* Текущий URL минус параметры запроса глобальной авторизации плюс $append, если он не пуст */
     static function clean_uri($append = array())
@@ -145,14 +159,14 @@ class MWGlobalAuthClient
         }
     }
 
-    /* Хук в MediaWiki */
-    static function MediaWikiPerformAction($output, $article, $title, $user, $request, $wiki)
+    /* Обработать команды авторизации и проверить доступ */
+    static function handle_and_check()
     {
-        global $wgUser, $wgRequest;
+        global $wgUser, $wgRequest, $wgTitle;
         global $egGlobalAuthClientRequire, $egGlobalAuthClientRequireGroup, $egGlobalAuthServer, $egGlobalAuthMapToHaloACL;
-        if (!$egGlobalAuthServer)
+        if (!$egGlobalAuthServer || self::$checked)
             return true;
-        $v = $request->getValues();
+        $v = $wgRequest->getValues();
         if ($v['ga_client'] && ($id = $v['ga_id']))
         {
             $cache = wfGetCache(CACHE_ANYTHING);
@@ -197,9 +211,10 @@ class MWGlobalAuthClient
                 exit;
             }
         }
-        $spec = strtolower($title->getText());
-        if ($title->getNamespace() != NS_SPECIAL || !self::$Whitelist[$spec])
+        $spec = strtolower($wgTitle->getText());
+        if ($wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[$spec])
             self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);
+        self::$checked = true;
         return true;
     }
 

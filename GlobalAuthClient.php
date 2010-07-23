@@ -207,7 +207,7 @@ class MWGlobalAuthClient
     static function get_user($d)
     {
         $emails = array($d['user_email'] => 1);
-        if ($d['user_email_aliases'])
+        if (is_array($d['user_email_aliases']))
             $emails += array_flip($d['user_email_aliases']);
         $dbr = wfGetDB(DB_SLAVE);
         foreach (array_keys($emails) as $email)
@@ -252,10 +252,11 @@ class MWGlobalAuthClient
         /* Инициировать, если
            - запросили перелогин ($force)
            - пользователь не авторизован, а требуется он или внешняя группа
-           - пользователь не авторизован и вообще не пробовал авторизоваться
+           - пользователь не авторизован и вообще не пробовал авторизоваться, и пришёл к нам браузер, а не LWP какое-нибудь
            - требуется группа, а данные о группах ещё не получены
          */
-        $redo_auth = $force || !$d || ($require || $rg) && $d == 'nologin' || $rg && !$d['user_groups'];
+        $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', $_SERVER['HTTP_USER_AGENT']);
+        $redo_auth = $force || !$d && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && !$d['user_groups'];
         if (!$redo_auth)
         {
             if ($rg && !in_array($rg, $d['user_groups']))

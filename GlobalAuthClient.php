@@ -189,21 +189,26 @@ class MWGlobalAuthClient
                 }
             }
             /* к нам пришёл пользователь, его надо авторизовать или послать */
-            if (!$v['ga_key'] && ($d = $cache->get($datakey)))
+            if (!$v['ga_key'])
             {
-                $user = self::get_user($d);
-                if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
-                    self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
-                elseif ($user)
+                if ($d = $cache->get($datakey))
                 {
-                    if ($egGlobalAuthMapToHaloACL && class_exists('HACLSecurityDescriptor'))
+                    $user = self::get_user($d);
+                    if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
+                        self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
+                    elseif ($user)
                     {
-                        /* нужно отобразить внешние группы на HaloACL-группы */
-                        self::map_to_haloacl_groups($user, $d['user_groups'], $d['auth_source'] ? ' ('.$d['auth_source'].')' : ' (X)');
+                        if ($egGlobalAuthMapToHaloACL && class_exists('HACLSecurityDescriptor'))
+                        {
+                            /* нужно отобразить внешние группы на HaloACL-группы */
+                            self::map_to_haloacl_groups($user, $d['user_groups'], $d['auth_source'] ? ' ('.$d['auth_source'].')' : ' (X)');
+                        }
+                        $cache->delete($datakey);
+                        $cache->set(wfMemcKey('ga-udata', $user->getId()), $d, 86400);
+                        $user->setCookies();
                     }
-                    $cache->delete($datakey);
-                    $cache->set(wfMemcKey('ga-udata', $user->getId()), $d, 86400);
-                    $user->setCookies();
+                    else
+                        $wgRequest->response()->setcookie('globalauth', $id);
                 }
                 else
                     $wgRequest->response()->setcookie('globalauth', $id);

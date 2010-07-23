@@ -78,7 +78,7 @@ class MWGlobalAuthClient
         /* получаем список внешних групп, в которых уже есть $user */
         $res = $dbr->select(array('halo_acl_group_members', 'halo_acl_groups'), 'group_name',
             array(
-                'group_name LIKE '.$dbr->addQuotes('%'.$suffix),
+                'group_name LIKE '.$dbr->addQuotes('Group/%'.$suffix),
                 'group_id=parent_group_id',
                 'child_type' => 'user',
                 'child_id' => $user->getId()
@@ -88,16 +88,25 @@ class MWGlobalAuthClient
         /* вычисляем разницу между теми, что есть и теми, что надо */
         $add_groups = array();
         foreach ($groups as $g)
-            $add_groups[$g.$suffix] = 1;
+        {
+            $g = str_replace(' ', '_', trim($g, " _").$suffix);
+            $g = mb_strtoupper(mb_substr($g, 0, 1)) . mb_substr($g, 1);
+            $add_groups[$g] = 1;
+        }
         $remove_groups = array();
         while ($row = $dbr->fetchRow($res))
         {
-            if (!array_key_exists($row, $add_groups))
-                $remove_groups[] = $row;
-            unset($add_groups[$row]);
+            $g = substr($row[0], 6);
+            $g = str_replace(' ', '_', $g);
+            $g = mb_strtoupper(mb_substr($g, 0, 1)) . mb_substr($g, 1);
+            if (!array_key_exists($g, $add_groups))
+                $remove_groups[] = $g;
+            unset($add_groups[$g]);
         }
         $dbr->freeResult($res);
         $remove_groups = array_flip($remove_groups);
+        if (!$add_groups && !$remove_groups)
+            return;
         /* получаем составы всех редактируемых групп */
         $res = $dbr->select(
             array('halo_acl_group_members', 'halo_acl_groups', 'user'), 'group_name, user_name',
@@ -190,7 +199,7 @@ class MWGlobalAuthClient
         }
         $spec = strtolower($title->getText());
         if ($title->getNamespace() != NS_SPECIAL || !self::$Whitelist[$spec])
-            self::require_auth($egGlobalAuthClientRequire || $_REQUEST['ga_require']);
+            self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);
         return true;
     }
 

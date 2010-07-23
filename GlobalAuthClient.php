@@ -221,8 +221,7 @@ class MWGlobalAuthClient
                 exit;
             }
         }
-        $spec = strtolower($wgTitle->getText());
-        if ($wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[$spec])
+        if (!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())])
             self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);
         self::$checked = true;
         return true;

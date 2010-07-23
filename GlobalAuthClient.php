@@ -189,7 +189,7 @@ class MWGlobalAuthClient
                 }
             }
             /* к нам пришёл пользователь, его надо авторизовать или послать */
-            if (!$v['ga_key'])
+            elseif (!$v['ga_key'])
             {
                 if ($d = $cache->get($datakey))
                 {

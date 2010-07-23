@@ -174,22 +174,27 @@ class MWGlobalAuthClient
             $datakey = wfMemcKey('ga-cdata', $id);
             $secret = $cache->get($cachekey);
             /* сервер передаёт нам данные, их надо сохранить в кэше */
-            if ($v['ga_key'] && $v['ga_key'] == $secret)
+            if ($v['ga_key'])
             {
-                $cache->delete($cachekey);
-                if ($v['ga_nologin'])
-                    $data = 'nologin';
-                elseif ($v['ga_data'])
-                    $data = (array)json_decode(utf8_decode($v['ga_data']));
-                if ($data)
+                if ($v['ga_key'] == $secret)
                 {
-                    $cache->set($datakey, $data, 86400);
-                    print "1";
-                    exit;
+                    $cache->delete($cachekey);
+                    if ($v['ga_nologin'])
+                        $data = 'nologin';
+                    elseif ($v['ga_data'])
+                        $data = (array)json_decode(utf8_decode($v['ga_data']));
+                    if ($data)
+                    {
+                        $cache->set($datakey, $data, 86400);
+                        print "1";
+                        exit;
+                    }
                 }
+                header("HTTP/1.1 404 Not Found");
+                exit;
             }
             /* к нам пришёл пользователь, его надо авторизовать или послать */
-            elseif (!$v['ga_key'])
+            else
             {
                 if ($d = $cache->get($datakey))
                 {

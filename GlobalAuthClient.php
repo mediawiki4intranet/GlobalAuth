@@ -256,7 +256,7 @@ class MWGlobalAuthClient
         $rg = $egGlobalAuthClientRequireGroup;
         /* в каких случаях нужно повторно запросить авторизацию? */
         if ($wgUser->getId())
-            $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
+            $id = $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
         else
         {
             /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
@@ -271,7 +271,7 @@ class MWGlobalAuthClient
            - требуется группа, а данные о группах ещё не получены
          */
         $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', $_SERVER['HTTP_USER_AGENT']);
-        $redo_auth = $force || !$d && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && !$d['user_groups'];
+        $redo_auth = $force || !$id && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && !$d['user_groups'];
         if (!$redo_auth)
         {
             if ($rg && !in_array($rg, $d['user_groups']))

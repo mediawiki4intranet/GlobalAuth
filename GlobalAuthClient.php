@@ -142,6 +142,7 @@ class MWGlobalAuthClient
         foreach ($remove_groups as $r => $true)
             unset($members[$r][$user->getName()]);
         /* обновляем группы из-под имени WikiSysop'а */
+        $old_user = $wgUser;
         $wgUser = User::newFromName('WikiSysop');
         foreach ($members as $group => $users)
         {
@@ -157,6 +158,7 @@ class MWGlobalAuthClient
             /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
             HACLParserFunctions::getInstance()->reset();
         }
+        $wgUser = $old_user;
     }
 
     /* Обработать команды авторизации и проверить доступ */
@@ -210,6 +212,8 @@ class MWGlobalAuthClient
                         }
                         $cache->delete($datakey);
                         $cache->set(wfMemcKey('ga-udata', $user->getId()), $d, 86400);
+                        if(session_id() == '')
+                            wfSetupSession();
                         $user->setCookies();
                     }
                     else

@@ -264,14 +264,13 @@ class MWGlobalAuthClient
         $require = $require || $force;
         $rg = $egGlobalAuthClientRequireGroup;
         /* в каких случаях нужно повторно запросить авторизацию? */
+        $gaid = $_COOKIE[$wgCookiePrefix.'globalauth'];
         if ($wgUser->getId())
-            $id = $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
-        else
+            $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
+        elseif ($gaid)
         {
             /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
-            $id = $_COOKIE[$wgCookiePrefix.'globalauth'];
-            if ($id)
-                $d = $cache->get(wfMemcKey('ga-cdata', $id));
+            $d = $cache->get(wfMemcKey('ga-cdata', $gaid));
         }
         /* Инициировать, если
            - запросили перелогин ($force)
@@ -280,7 +279,7 @@ class MWGlobalAuthClient
            - требуется группа, а данные о группах ещё не получены
          */
         $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', $_SERVER['HTTP_USER_AGENT']);
-        $redo_auth = $force || !$id && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && !$d['user_groups'];
+        $redo_auth = $force || (!$d && !$gaid) && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && (!is_array($d) || !$d['user_groups']);
         if (!$redo_auth)
         {
             if ($rg && !in_array($rg, $d['user_groups']))

@@ -271,7 +271,7 @@ class MWGlobalAuthClient
     static function require_auth($require = false, $force = false)
     {
         global $wgUser, $wgRequest, $wgCookiePrefix;
-        global $egGlobalAuthClientRequireGroup, $egGlobalAuthServer;
+        global $egGlobalAuthClientRequireGroup, $egGlobalAuthServer, $egGlobalAuthWhitelistUsers;
         if (!$egGlobalAuthServer)
             return;
         $cache = wfGetCache(CACHE_ANYTHING);
@@ -280,7 +280,11 @@ class MWGlobalAuthClient
         /* в каких случаях нужно повторно запросить авторизацию? */
         $gaid = $_COOKIE[$wgCookiePrefix.'globalauth'];
         if ($wgUser->getId())
+        {
+            if (in_array($wgUser->getName(), $egGlobalAuthWhitelistUsers))
+                return;
             $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
+        }
         if (!$d && $gaid)
         {
             /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */

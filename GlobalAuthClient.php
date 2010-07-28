@@ -255,6 +255,16 @@ class MWGlobalAuthClient
         exit;
     }
 
+    /* Left in for debugging */
+    static function vdump($v)
+    {
+        ob_start();
+        var_dump($v);
+        $r = ob_get_contents();
+        ob_end_flush();
+        return trim($r);
+    }
+
     /* инициировать глобальную авторизацию,
        требовать успешную авторизацию при $require,
        инициировать глобальную авторизацию заново при $force */
@@ -271,7 +281,7 @@ class MWGlobalAuthClient
         $gaid = $_COOKIE[$wgCookiePrefix.'globalauth'];
         if ($wgUser->getId())
             $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
-        elseif ($gaid)
+        if (!$d && $gaid)
         {
             /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
             $d = $cache->get(wfMemcKey('ga-cdata', $gaid));

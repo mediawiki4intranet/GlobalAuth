@@ -281,7 +281,7 @@ class MWGlobalAuthClient
         $gaid = $_COOKIE[$wgCookiePrefix.'globalauth'];
         if ($wgUser->getId())
         {
-            if (in_array($wgUser->getName(), $egGlobalAuthWhitelistUsers))
+            if ($egGlobalAuthWhitelistUsers && in_array($wgUser->getName(), $egGlobalAuthWhitelistUsers))
                 return;
             $d = $cache->get(wfMemcKey('ga-udata', $wgUser->getId()));
         }

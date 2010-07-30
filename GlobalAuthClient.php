@@ -103,16 +103,15 @@ class MWGlobalAuthClient
         $add_groups = array();
         foreach ($groups as $g)
         {
-            $g = str_replace(' ', '_', trim($g, " _").$suffix);
+            $g = str_replace('_', ' ', trim($g, " _").$suffix);
             $g = mb_strtoupper(mb_substr($g, 0, 1)) . mb_substr($g, 1);
-            $add_groups[$g] = 1;
+            $add_groups["Group/$g"] = 1;
         }
         $remove_groups = array();
         while ($row = $dbr->fetchRow($res))
         {
-            $g = substr($row[0], 6);
-            $g = str_replace(' ', '_', $g);
-            $g = mb_strtoupper(mb_substr($g, 0, 1)) . mb_substr($g, 1);
+            $g = $row[0];
+            $g = str_replace('_', ' ', $g);
             if (!array_key_exists($g, $add_groups))
                 $remove_groups[] = $g;
             unset($add_groups[$g]);
@@ -153,8 +152,8 @@ class MWGlobalAuthClient
                 "{{#member:members=".implode(',',$content)."}}\n" .
                 "{{#manage group:assigned to=User:WikiSysop}}\n" .
                 "[[Category:ACL/Group]]";
-            $article = new Article(Title::newFromText("ACL:Group/$group"));
-            $article->doEdit($content, "Update $group", EDIT_FORCE_BOT);
+            $article = new Article(Title::newFromText("ACL:$group"));
+            $article->doEdit($content, "Update ACL:$group", EDIT_FORCE_BOT);
             /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
             HACLParserFunctions::getInstance()->reset();
         }

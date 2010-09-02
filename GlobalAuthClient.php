@@ -163,7 +163,7 @@ class MWGlobalAuthClient
     /* Обработать команды авторизации и проверить доступ */
     static function handle_and_check()
     {
-        global $wgUser, $wgRequest, $wgTitle;
+        global $wgUser, $wgRequest, $wgTitle, $wgCookiePrefix;
         global $egGlobalAuthClientRequire, $egGlobalAuthClientRequireGroup, $egGlobalAuthServer, $egGlobalAuthMapToHaloACL;
         if (!$egGlobalAuthServer || self::$checked)
             return true;
@@ -227,7 +227,8 @@ class MWGlobalAuthClient
                 exit;
             }
         }
-        if (!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())])
+        if ((!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())]) &&
+            (!$_COOKIE[$wgCookiePrefix.'LoggedOut'] || wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
         {
             wfDebug(__CLASS__.": checking global auth\n");
             self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);

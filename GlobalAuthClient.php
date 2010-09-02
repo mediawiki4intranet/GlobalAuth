@@ -228,7 +228,10 @@ class MWGlobalAuthClient
             }
         }
         if (!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())])
+        {
+            wfDebug(__CLASS__.": checking global auth\n");
             self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);
+        }
         self::$checked = true;
         return true;
     }

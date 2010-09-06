@@ -228,7 +228,7 @@ class MWGlobalAuthClient
             }
         }
         if ((!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())]) &&
-            (!$_COOKIE[$wgCookiePrefix.'LoggedOut'] || wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
+            ($_REQUEST['ga_require'] || !$_COOKIE[$wgCookiePrefix.'LoggedOut'] || wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
         {
             wfDebug(__CLASS__.": checking global auth\n");
             self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);

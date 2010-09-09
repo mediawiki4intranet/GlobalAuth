@@ -145,6 +145,9 @@ class MWGlobalAuthClient
         $wgUser = User::newFromName('WikiSysop');
         foreach ($members as $group => $users)
         {
+            $grptitle = Title::newFromText("ACL:$group");
+            if (!$grptitle)
+                continue;
             $content = array();
             foreach ($users as $u => $true)
                 $content[] = 'User:'.$u;
@@ -152,7 +155,7 @@ class MWGlobalAuthClient
                 "{{#member:members=".implode(',',$content)."}}\n" .
                 "{{#manage group:assigned to=User:WikiSysop}}\n" .
                 "[[Category:ACL/Group]]";
-            $article = new Article(Title::newFromText("ACL:$group"));
+            $article = new Article($grptitle);
             $article->doEdit($content, "Update ACL:$group", EDIT_FORCE_BOT);
             /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
             HACLParserFunctions::getInstance()->reset();

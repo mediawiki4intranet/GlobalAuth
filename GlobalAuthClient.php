@@ -145,6 +145,8 @@ class MWGlobalAuthClient
         $wgUser = User::newFromName('WikiSysop');
         foreach ($members as $group => $users)
         {
+            /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
+            HACLParserFunctions::getInstance()->reset();
             $grptitle = Title::newFromText("ACL:$group");
             if (!$grptitle)
                 continue;
@@ -156,9 +158,9 @@ class MWGlobalAuthClient
                 "{{#manage group:assigned to=User:WikiSysop}}\n" .
                 "[[Category:ACL/Group]]";
             $article = new Article($grptitle);
+            if ($article->getTitle()->getText() != $group)
+                die("Щас перезапишу неправильную страницу: '".$article->getTitle()->getText()."'!!! // Синхронизатор групп");
             $article->doEdit($content, "Update ACL:$group", EDIT_FORCE_BOT);
-            /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
-            HACLParserFunctions::getInstance()->reset();
         }
         $wgUser = $old_user;
     }

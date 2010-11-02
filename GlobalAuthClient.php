@@ -145,8 +145,6 @@ class MWGlobalAuthClient
         $wgUser = User::newFromName('WikiSysop');
         foreach ($members as $group => $users)
         {
-            /* HACLParserFunctions ругается, если обновлять несколько статей за раз без reset'а */
-            HACLParserFunctions::getInstance()->reset();
             $grptitle = Title::newFromText("ACL:$group");
             if (!$grptitle)
                 continue;

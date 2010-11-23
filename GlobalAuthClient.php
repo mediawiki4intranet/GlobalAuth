@@ -142,6 +142,13 @@ class MWGlobalAuthClient
             unset($members[$r][$user->getName()]);
         /* обновляем группы из-под имени WikiSysop'а */
         $old_user = $wgUser;
+        ### Bug 72303
+        global $wgRequest;
+        $old_title = $_REQUEST['title'];
+        unset($_POST['title']);
+        unset($_REQUEST['title']);
+        unset($_GET['title']);
+        unset($wgRequest->data['title']);
         $wgUser = User::newFromName('WikiSysop');
         foreach ($members as $group => $users)
         {
@@ -161,6 +168,9 @@ class MWGlobalAuthClient
             $article->doEdit($content, "Update ACL:$group", EDIT_FORCE_BOT);
         }
         $wgUser = $old_user;
+        ### Bug 72303
+        if ($old_title)
+            $wgRequest->data['title'] = $_GET['title'] = $_REQUEST['title'] = $old_title;
     }
 
     /* Обработать команды авторизации и проверить доступ */

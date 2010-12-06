@@ -204,6 +204,7 @@ class MWGlobalAuthClient
                         exit;
                     }
                 }
+                wfGetDB(DB_MASTER)->commit();
                 header("HTTP/1.1 404 Not Found");
                 exit;
             }
@@ -236,6 +237,7 @@ class MWGlobalAuthClient
                 }
                 else
                     $wgRequest->response()->setcookie('globalauth', $id);
+                wfGetDB(DB_MASTER)->commit();
                 header("Location: ".self::clean_uri());
                 exit;
             }

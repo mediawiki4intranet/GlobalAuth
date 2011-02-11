@@ -171,7 +171,7 @@ class MWGlobalAuthClient
         ### CustIS Bug 72303
         if ($old_title)
         {
-            $wgRequest->setValue('title', $old_title);
+            $wgRequest->setVal('title', $old_title);
             $_GET['title'] = $_REQUEST['title'] = $old_title;
         }
     }

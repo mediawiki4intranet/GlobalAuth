@@ -128,7 +128,18 @@ class SpecialGlobalAuth extends SpecialPage
             $cache->delete($urlkey);
         }
         else
-            die("ga_id points to an unknown global auth session ID");
+        {
+            $url = $v['ga_url'];
+            if ($url)
+            {
+                // Просто отправить пользователя назад
+                $url .= (strpos($url, '?') !== false ? '&' : '?');
+                $url .= 'ga_id='.urlencode($id).'&ga_res=404';
+                header("Location: $url");
+            }
+            else
+                die("ga_id points to an unknown global auth session ID");
+        }
         exit;
     }
 }

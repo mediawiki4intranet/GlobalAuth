@@ -176,7 +176,7 @@ class MWGlobalAuthClient
         }
     }
 
-    /* Обработать команды авторизации и проверить доступ */
+    // Обработать команды авторизации и проверить доступ
     static function handle_and_check()
     {
         global $wgUser, $wgRequest, $wgTitle, $wgCookiePrefix;
@@ -190,7 +190,7 @@ class MWGlobalAuthClient
             $cachekey = wfMemcKey('ga-ckey', $id);
             $datakey = wfMemcKey('ga-cdata', $id);
             $secret = $cache->get($cachekey);
-            /* сервер передаёт нам данные, их надо сохранить в кэше */
+            // сервер передаёт нам данные, их надо сохранить в кэше
             if ($v['ga_key'])
             {
                 if ($v['ga_key'] == $secret)
@@ -211,22 +211,22 @@ class MWGlobalAuthClient
                 header("HTTP/1.1 404 Not Found");
                 exit;
             }
-            /* к нам пришёл пользователь, его надо авторизовать или послать */
+            // к нам пришёл пользователь, его надо авторизовать или послать
             else
             {
                 if ($d = $cache->get($datakey))
                 {
+                    $user = NULL;
                     if (!$wgUser->getId())
                         $user = self::get_user($d);
-                    else
-                        $user = &$wgUser;
                     if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
                         self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
                     elseif ($user)
                     {
                         if ($egGlobalAuthMapToHaloACL && class_exists('HACLSecurityDescriptor'))
                         {
-                            /* нужно отобразить внешние группы на HaloACL-группы */
+                            // нужно отобразить внешние группы на IntraACL-группы
+                            // но только если это найденный нами, а не произвольный залогиненный, пользователь
                             self::map_to_haloacl_groups($user, $d['user_groups'], $d['auth_source'] ? ' ('.$d['auth_source'].')' : ' (X)');
                         }
                         $cache->delete($datakey);

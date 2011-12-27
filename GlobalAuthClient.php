@@ -216,9 +216,9 @@ class MWGlobalAuthClient
             {
                 if ($d = $cache->get($datakey))
                 {
-                    $user = NULL;
-                    if (!$wgUser->getId())
-                        $user = self::get_user($d);
+                    $user = self::get_user($d);
+                    if ($user && !$wgUser->isAnon() && $wgUser->getId() != $user->getId())
+                        $user = NULL;
                     if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
                         self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
                     elseif ($user)

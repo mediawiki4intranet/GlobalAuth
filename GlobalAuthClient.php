@@ -18,7 +18,7 @@ $wgHooks['MediaWikiPerformAction'][] = 'MWGlobalAuthClient::MediaWikiPerformActi
 $wgHooks['MediaWikiBeforeInitialize'][] = 'MWGlobalAuthClient::MediaWikiBeforeInitialize';
 
 /*  Расширение - клиент глобальной авторизации (GlobalAuth.php - сервер глобальной авторизации)
-    Конфигурация: 
+    Конфигурация:
     $egGlobalAuthServer = '';               // обязательная настройка, URL скрипта сервера авторизации
     $egGlobalAuthClientRequire = false;     // требовать успешной авторизации?
     $egGlobalAuthClientRequireGroup = NULL; // требовать членства пользователя во внешней группе такой-то
@@ -27,8 +27,7 @@ $wgHooks['MediaWikiBeforeInitialize'][] = 'MWGlobalAuthClient::MediaWikiBeforeIn
 */
 
 /* шаблон HTML-сообщения об ошибке доступа по внешней группе */
-if (!$egGlobalAuthGroupAccessDeniedTemplate)
-    $egGlobalAuthGroupAccessDeniedTemplate = '
+$egGlobalAuthGroupAccessDeniedTemplate = '
 <html>
 <head>
 <title>403 Forbidden</title>
@@ -69,18 +68,12 @@ class MWGlobalAuthClient
     /* Текущий URL минус параметры запроса глобальной авторизации плюс $append, если он не пуст */
     static function clean_uri($append = array())
     {
-        global $wgProto;
+        global $wgServer, $wgTitle;
         $gp = $_GET+$_POST;
         foreach(explode(' ', 'id key client res nologin data require') as $k)
             unset($gp["ga_$k"]);
-        if (trim($_SERVER['PATH_INFO'], '/'))
-            unset($gp['title']);
-        $uri = $wgProto."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-        if (($p = strpos($uri, '?')) !== false)
-            $uri = substr($uri, 0, $p);
-        $gp += $append;
-        if ($gp)
-            $uri .= '?'.http_build_query($gp);
+        unset($gp['title']);
+        $uri = $wgTitle->getFullUrl($gp+$append);
         return $uri;
     }
 
@@ -184,14 +177,15 @@ class MWGlobalAuthClient
         if (!$egGlobalAuthServer || self::$checked)
             return true;
         $v = $wgRequest->getValues();
-        if ($v['ga_client'] && ($id = $v['ga_id']))
+        if (isset($v['ga_client']) && isset($v['ga_id']))
         {
+            $id = $v['ga_id'];
             $cache = wfGetCache(CACHE_ANYTHING);
             $cachekey = wfMemcKey('ga-ckey', $id);
             $datakey = wfMemcKey('ga-cdata', $id);
             $secret = $cache->get($cachekey);
             // сервер передаёт нам данные, их надо сохранить в кэше
-            if ($v['ga_key'])
+            if (!empty($v['ga_key']))
             {
                 if ($v['ga_key'] == $secret)
                 {
@@ -246,10 +240,11 @@ class MWGlobalAuthClient
             }
         }
         if ((!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())]) &&
-            ($_REQUEST['ga_require'] || !$_COOKIE[$wgCookiePrefix.'LoggedOut'] || wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
+            (!empty($_REQUEST['ga_require']) || empty($_COOKIE[$wgCookiePrefix.'LoggedOut']) ||
+            wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
         {
             wfDebug(__CLASS__.": checking global auth\n");
-            self::require_auth($egGlobalAuthClientRequire, $_REQUEST['ga_require']);
+            self::require_auth($egGlobalAuthClientRequire, !empty($_REQUEST['ga_require']));
         }
         self::$checked = true;
         return true;
@@ -302,7 +297,8 @@ class MWGlobalAuthClient
         $require = $require || $force;
         $rg = $egGlobalAuthClientRequireGroup;
         /* в каких случаях нужно повторно запросить авторизацию? */
-        $gaid = $_COOKIE[$wgCookiePrefix.'globalauth'];
+        $gaid = isset($_COOKIE[$wgCookiePrefix.'globalauth']) ? $_COOKIE[$wgCookiePrefix.'globalauth'] : false;
+        $d = false;
         if ($wgUser->getId())
         {
             if ($egGlobalAuthWhitelistUsers && in_array($wgUser->getName(), $egGlobalAuthWhitelistUsers))

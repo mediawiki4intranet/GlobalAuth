@@ -52,8 +52,8 @@ class SpecialGlobalAuth extends SpecialPage
 {
     function __construct()
     {
-        SpecialPage::SpecialPage('GlobalAuth');
-        $this->mListed = false;
+        parent::__construct('GlobalAuth');
+        $this->setListed(false);
     }
     function execute($par)
     {

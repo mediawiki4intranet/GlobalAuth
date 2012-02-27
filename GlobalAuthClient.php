@@ -15,7 +15,7 @@ if (!defined('MEDIAWIKI')) die();
 require_once(dirname(__FILE__).'/urandom.php');
 
 $wgHooks['MediaWikiPerformAction'][] = 'MWGlobalAuthClient::MediaWikiPerformAction';
-$wgHooks['MediaWikiBeforeInitialize'][] = 'MWGlobalAuthClient::MediaWikiBeforeInitialize';
+$wgHooks['BeforeInitialize'][] = 'MWGlobalAuthClient::MediaWikiBeforeInitialize';
 
 /*  Расширение - клиент глобальной авторизации (GlobalAuth.php - сервер глобальной авторизации)
     Конфигурация:

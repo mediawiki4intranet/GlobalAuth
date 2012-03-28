@@ -180,7 +180,7 @@ class MWGlobalAuthClient
         if (isset($v['ga_client']) && isset($v['ga_id']))
         {
             $id = $v['ga_id'];
-            $cache = wfGetCache(CACHE_ANYTHING);
+            $cache = wfGetCache(CACHE_DB);
             $cachekey = wfMemcKey('ga-ckey', $id);
             $datakey = wfMemcKey('ga-cdata', $id);
             $secret = $cache->get($cachekey);
@@ -293,7 +293,7 @@ class MWGlobalAuthClient
         global $egGlobalAuthClientRequireGroup, $egGlobalAuthServer, $egGlobalAuthWhitelistUsers;
         if (!$egGlobalAuthServer)
             return;
-        $cache = wfGetCache(CACHE_ANYTHING);
+        $cache = wfGetCache(CACHE_DB);
         $require = $require || $force;
         $rg = $egGlobalAuthClientRequireGroup;
         /* в каких случаях нужно повторно запросить авторизацию? */

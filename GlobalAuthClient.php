@@ -196,11 +196,13 @@ class MWGlobalAuthClient
                         $data = (array)json_decode(utf8_decode($v['ga_data']));
                     if ($data)
                     {
+                        wfDebug("GlobalAuth: saving data passed from server for user '$data[user_email]'\n");
                         $cache->set($datakey, $data, 86400);
                         print "1";
                         exit;
                     }
                 }
+                wfDebug("GlobalAuth: invalid request from remote server\n");
                 wfGetDB(DB_MASTER)->commit();
                 header("HTTP/1.1 404 Not Found");
                 exit;
@@ -214,9 +216,13 @@ class MWGlobalAuthClient
                     if ($user && !$wgUser->isAnon() && $wgUser->getId() != $user->getId())
                         $user = NULL;
                     if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
+                    {
+                        wfDebug("GlobalAuth: access denied for user '$d[user_email]'\n");
                         self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
+                    }
                     elseif ($user)
                     {
+                        wfDebug("GlobalAuth: authenticating user '$d[user_email]'\n");
                         if ($egGlobalAuthMapToHaloACL && class_exists('HACLSecurityDescriptor'))
                         {
                             // нужно отобразить внешние группы на IntraACL-группы
@@ -230,10 +236,16 @@ class MWGlobalAuthClient
                         $user->setCookies();
                     }
                     else
+                    {
+                        wfDebug("GlobalAuth: user '$d[user_email]' not found\n");
                         $wgRequest->response()->setcookie('globalauth', $id);
+                    }
                 }
                 else
+                {
+                    wfDebug("GlobalAuth: no auth data for user '$d[user_email]' passed from server\n");
                     $wgRequest->response()->setcookie('globalauth', $id);
+                }
                 wfGetDB(DB_MASTER)->commit();
                 header("Location: ".self::clean_uri());
                 exit;

@@ -68,12 +68,19 @@ class MWGlobalAuthClient
     /* Текущий URL минус параметры запроса глобальной авторизации плюс $append, если он не пуст */
     static function clean_uri($append = array())
     {
-        global $wgServer, $wgTitle;
+        global $wgServer, $wgTitle, $wgRequest;
         $gp = $_GET+$_POST;
         foreach(explode(' ', 'id key client res nologin data require') as $k)
             unset($gp["ga_$k"]);
         unset($gp['title']);
-        $uri = $wgTitle->getFullUrl($gp+$append);
+        if (defined('HACL_HALOACL_VERSION'))
+        {
+            $hacl = haclfDisableTitlePatch();
+            $uri = Title::newFromText($wgRequest->getVal('title'))->getFullUrl($gp+$append);
+            haclfRestoreTitlePatch($hacl);
+        }
+        else
+            $uri = $wgTitle->getFullUrl($gp+$append);
         return $uri;
     }
 

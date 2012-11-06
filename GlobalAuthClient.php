@@ -76,7 +76,8 @@ class MWGlobalAuthClient
         if (defined('HACL_HALOACL_VERSION'))
         {
             $hacl = haclfDisableTitlePatch();
-            $uri = Title::newFromText($wgRequest->getVal('title'))->getFullUrl($gp+$append);
+            $title = Title::newFromText($wgRequest->getVal('title')) ?: $wgTitle;
+            $uri = $title->getFullUrl($gp+$append);
             haclfRestoreTitlePatch($hacl);
         }
         else

@@ -12,14 +12,7 @@
 
 if (!defined('MEDIAWIKI')) die();
 
-$wgExtensionFunctions[] = "wfInitGlobalAuth";
-
-function wfInitGlobalAuth()
-{
-    global $IP;
-    require_once("$IP/includes/SpecialPage.php");
-    SpecialPage::addPage(new SpecialGlobalAuth);
-}
+$wgSpecialPages['GlobalAuth'] = 'SpecialGlobalAuth';
 
 /**
 

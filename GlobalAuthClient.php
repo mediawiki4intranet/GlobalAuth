@@ -71,17 +71,26 @@ class MWGlobalAuthClient
         global $wgServer, $wgTitle, $wgRequest;
         $gp = $_GET+$_POST;
         foreach(explode(' ', 'id key client res nologin data require') as $k)
+        {
             unset($gp["ga_$k"]);
+        }
         unset($gp['title']);
         if (defined('HACL_HALOACL_VERSION'))
         {
+            global $haclgContLang;
             $hacl = haclfDisableTitlePatch();
             $title = Title::newFromText($wgRequest->getVal('title')) ?: $wgTitle;
+            if ($title->getPrefixedText() == $haclgContLang->getPermissionDeniedPage())
+            {
+                $title = Title::newMainPage();
+            }
             $uri = $title->getFullUrl($gp+$append);
             haclfRestoreTitlePatch($hacl);
         }
         else
+        {
             $uri = $wgTitle->getFullUrl($gp+$append);
+        }
         return $uri;
     }
 

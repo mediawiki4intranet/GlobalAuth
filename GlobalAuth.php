@@ -53,28 +53,26 @@ class SpecialGlobalAuth extends SpecialPage
         global $wgUser, $wgRequest, $wgSitename;
         $v = $wgRequest->getValues();
         $par = explode('/', $par, 2);
-        $id = $par[0] ?: $v['ga_id'];
+        $id = $par[0] ?: @$v['ga_id'];
         $secret = isset($par[1]) ? $par[1] : false;
         if (!$id)
             die("global auth session ID is missing (_REQUEST[ga_id])");
         if (!$secret)
-            $secret = $v['ga_key'];
+            $secret = @$v['ga_key'];
         $cache = wfGetCache(CACHE_ANYTHING);
         $cachekey = wfMemcKey('ga', $id);
         $urlkey = wfMemcKey('gau', $id);
         if ($secret)
         {
-            $cache->add($cachekey, $v['ga_key'], 86400);
+            $cache->add($cachekey, $secret, 86400);
             print "1";
         }
         elseif ($secret = $cache->get($cachekey))
         {
-            $url = $v['ga_url'];
-            if (!$url)
-                $url = $cache->get($urlkey);
+            $url = !empty($v['ga_url']) ? $v['ga_url'] : $cache->get($urlkey);
             if (!$url)
                 die("global auth post-back URL is missing (_REQUEST[ga_url])");
-            if (!$wgUser->getId() && !$v['ga_check'])
+            if (!$wgUser->getId() && empty($v['ga_check']))
             {
                 $cache->set($urlkey, $url, 86400);
                 $url = "Special:GlobalAuth/$id";
@@ -124,10 +122,10 @@ class SpecialGlobalAuth extends SpecialPage
         }
         else
         {
-            $url = $v['ga_url'];
-            if ($url)
+            if (!empty($v['ga_url']))
             {
                 // Просто отправить пользователя назад
+                $url = $v['ga_url'];
                 $url .= (strpos($url, '?') !== false ? '&' : '?');
                 $url .= 'ga_id='.urlencode($id).'&ga_res=404';
                 header("Location: $url");

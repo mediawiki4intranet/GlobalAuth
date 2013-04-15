@@ -52,8 +52,10 @@ class SpecialGlobalAuth extends SpecialPage
     {
         global $wgUser, $wgRequest, $wgSitename;
         $v = $wgRequest->getValues();
-        list($id, $secret) = explode('/', $par, 2);
-        if (!$id && !($id = $v['ga_id']))
+        $par = explode('/', $par, 2);
+        $id = $par[0] ?: $v['ga_id'];
+        $secret = isset($par[1]) ? $par[1] : false;
+        if (!$id)
             die("global auth session ID is missing (_REQUEST[ga_id])");
         if (!$secret)
             $secret = $v['ga_key'];

@@ -339,18 +339,32 @@ class MWGlobalAuthClient
             /* если пользователь не имеет локальной учётной записи, проверим внешние группы по ID сессии */
             $d = $cache->get(wfMemcKey('ga-cdata', $gaid));
         }
-        /* Инициировать, если
+        /* Инициировать, если запрос не POST, и если
            - запросили перелогин ($force)
            - пользователь не авторизован, а требуется он или внешняя группа
            - пользователь не авторизован и вообще не пробовал авторизоваться, и пришёл к нам браузер, а не LWP какое-нибудь
            - требуется группа, а данные о группах ещё не получены
          */
         $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', $_SERVER['HTTP_USER_AGENT']);
-        $redo_auth = $force || (!$d && !$gaid) && $is_browser || ($require || $rg) && (!$d || $d == 'nologin') || $rg && (!is_array($d) || !$d['user_groups']);
+        $redo_auth = !$wgRequest->wasPosted() && (
+            $force ||
+            (!$d && !$gaid) && $is_browser ||
+            ($require || $rg) && (!$d || $d == 'nologin') ||
+            $rg && (!is_array($d) || !$d['user_groups'])
+        );
         if (!$redo_auth)
         {
             if ($rg && !in_array($rg, $d['user_groups']))
                 self::group_access_denied($d);
+            return;
+        }
+        $url = $egGlobalAuthServer;
+        $url .= (strpos($url, '?') !== false ? '&' : '?');
+        $return = self::clean_uri(array('ga_client' => 1));
+        if (strlen($url)+strlen($return) > 2020)
+        {
+            /* Не пытаться авторизовать, если результатом будет Request-URI Too Large */
+            wfDebug("Global Auth Client: not authorizing: would trigger Request-URI too large error\n");
             return;
         }
         /* генерируем ID и ключ */
@@ -358,8 +372,6 @@ class MWGlobalAuthClient
         $id = $id[1];
         $key = unpack('H*', urandom(16));
         $key = $key[1];
-        $url = $egGlobalAuthServer;
-        $url .= (strpos($url, '?') !== false ? '&' : '?');
         /* передаём их серверу */
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url."ga_id=$id&ga_key=$key");
@@ -370,7 +382,6 @@ class MWGlobalAuthClient
         curl_close($curl);
         if ($content)
         {
-            $return = self::clean_uri(array('ga_client' => 1));
             $cachekey = wfMemcKey('ga-ckey', $id);
             $cache->set($cachekey, $key, 86400);
             /* Авторизуй меня, Большая Черепаха!!!

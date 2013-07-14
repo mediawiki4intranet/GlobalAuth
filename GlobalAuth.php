@@ -59,7 +59,7 @@ class SpecialGlobalAuth extends SpecialPage
             die("global auth session ID is missing (_REQUEST[ga_id])");
         if (!$secret)
             $secret = @$v['ga_key'];
-        $cache = wfGetCache(CACHE_ANYTHING);
+        $cache = wfGetCache(CACHE_DB);
         $cachekey = wfMemcKey('ga', $id);
         $urlkey = wfMemcKey('gau', $id);
         if ($secret)

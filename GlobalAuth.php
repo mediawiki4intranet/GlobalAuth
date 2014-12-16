@@ -95,6 +95,29 @@ class SpecialGlobalAuth extends SpecialPage
                     'auth_server'       => Title::newFromText('Special:GlobalAuth')->getFullUrl(),
                     'auth_site'         => Title::newMainPage()->getFullUrl(),
                 );
+                if (class_exists('IACLDefinition'))
+                {
+                    $where = array(
+                        'child_type' => IACL::PE_USER,
+                        'child_id' => $wgUser->getId(),
+                        'pe_type' => IACL::PE_GROUP,
+                    );
+                    $rules = IACLStorage::get('SD')->getRules($where, $options);
+                    foreach ($rules as &$rule)
+                    {
+                        $rule = $rule['pe_id'];
+                    }
+                    if ($rules)
+                    {
+                        $dbr = wfGetDB(DB_SLAVE);
+                        $rules = $dbr->select('page', 'page_title', array('page_id' => $rules), __METHOD__);
+                        foreach ($rules as &$rule)
+                        {
+                            $rule = str_replace('_', ' ', $rule->page_title);
+                        }
+                    }
+                    $data['user_groups'] = $rules;
+                }
                 $data = array('ga_data' => json_encode($data));
             }
             else

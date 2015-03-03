@@ -110,10 +110,11 @@ class SpecialGlobalAuth extends SpecialPage
                     if ($rules)
                     {
                         $dbr = wfGetDB(DB_SLAVE);
-                        $rules = $dbr->select('page', 'page_title', array('page_id' => $rules), __METHOD__);
-                        foreach ($rules as &$rule)
+                        $result = $dbr->select('page', 'page_title', array('page_id' => $rules), __METHOD__);
+                        $rules = [];
+                        foreach ($result as $row)
                         {
-                            $rule = str_replace('_', ' ', $rule->page_title);
+                            $rules[] = str_replace('_', ' ', $row->page_title);
                         }
                     }
                     $data['user_groups'] = $rules;

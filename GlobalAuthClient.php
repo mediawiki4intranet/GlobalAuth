@@ -268,7 +268,7 @@ class MWGlobalAuthClient
                 exit;
             }
         }
-        if ((!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || !self::$Whitelist[strtolower($wgTitle->getText())]) &&
+        if ((!$wgTitle || $wgTitle->getNamespace() != NS_SPECIAL || empty(self::$Whitelist[strtolower($wgTitle->getText())])) &&
             (!empty($_REQUEST['ga_require']) || empty($_COOKIE[$wgCookiePrefix.'LoggedOut']) ||
             wfTimestamp(TS_UNIX, $_COOKIE[$wgCookiePrefix.'LoggedOut'])+300 < time()))
         {

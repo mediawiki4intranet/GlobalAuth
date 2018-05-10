@@ -345,7 +345,7 @@ class MWGlobalAuthClient
            - пользователь не авторизован и вообще не пробовал авторизоваться, и пришёл к нам браузер, а не LWP какое-нибудь
            - требуется группа, а данные о группах ещё не получены
          */
-        $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', $_SERVER['HTTP_USER_AGENT']);
+        $is_browser = preg_match('/Opera|Mozilla|Chrome|Safari|MSIE/is', !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
         $redo_auth = !$wgRequest->wasPosted() && (
             $force ||
             (!$d && !$gaid) && $is_browser ||

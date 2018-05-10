@@ -207,13 +207,13 @@ class MWGlobalAuthClient
                 if ($v['ga_key'] == $secret)
                 {
                     $cache->delete($cachekey);
-                    if ($v['ga_nologin'])
+                    if (!empty($v['ga_nologin']))
                         $data = 'nologin';
                     elseif ($v['ga_data'])
                         $data = (array)json_decode(utf8_decode($v['ga_data']));
                     if ($data)
                     {
-                        wfDebug("GlobalAuth: saving data passed from server for user '$data[user_email]'\n");
+                        wfDebug("GlobalAuth: saving data passed from server for user '".$data['user_email']."'\n");
                         $cache->set($datakey, $data, 86400);
                         print "1";
                         exit;
@@ -234,12 +234,12 @@ class MWGlobalAuthClient
                         $user = NULL;
                     if ($egGlobalAuthClientRequireGroup && !in_array($egGlobalAuthClientRequireGroup, $d['user_groups']))
                     {
-                        wfDebug("GlobalAuth: access denied for user '$d[user_email]'\n");
+                        wfDebug("GlobalAuth: access denied for user '".$d['user_email']."'\n");
                         self::group_access_denied($d, $egGlobalAuthClientRequireGroup);
                     }
                     elseif ($user)
                     {
-                        wfDebug("GlobalAuth: authenticating user '$d[user_email]'\n");
+                        wfDebug("GlobalAuth: authenticating user '".$d['user_email']."'\n");
                         if ($egGlobalAuthMapToHaloACL && class_exists('HACLSecurityDescriptor'))
                         {
                             // нужно отобразить внешние группы на IntraACL-группы
@@ -254,13 +254,13 @@ class MWGlobalAuthClient
                     }
                     else
                     {
-                        wfDebug("GlobalAuth: user '$d[user_email]' not found\n");
+                        wfDebug("GlobalAuth: user '".$d['user_email']."' not found\n");
                         $wgRequest->response()->setcookie('globalauth', $id);
                     }
                 }
                 else
                 {
-                    wfDebug("GlobalAuth: no auth data for user '$d[user_email]' passed from server\n");
+                    wfDebug("GlobalAuth: no auth data for user '".$d['user_email']."' passed from server\n");
                     $wgRequest->response()->setcookie('globalauth', $id);
                 }
                 wfGetDB(DB_MASTER)->commit();
